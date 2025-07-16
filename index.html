@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>HarshTech Camera Assistant</title>
+  <link rel="shortcut icon" href="harshtech-logo.jpg" type="image/x-icon">
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+     background-color: black;
+      color: #ffffff;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      min-height: 100vh;
+      text-align: center;
+    }
+
+    h1 {
+      margin-bottom: 10px;
+    }
+
+    .robot {
+      width: 160px;
+      margin-bottom: 20px;
+      animation: float 3s ease-in-out infinite;
+    }
+
+    @keyframes float {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-10px); }
+    }
+
+    video, canvas {
+      display: none;
+      margin-top: 15px;
+      width: 90%;
+      max-width: 500px;
+      border-radius: 10px;
+      box-shadow: 0 0 20px cyan;
+    }
+
+    .info {
+      margin-top: 10px;
+      color: #00ff88;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>🤖 HarshTech Camera Assistant</h1>
+  <img src="loading.gif" alt="Robot Assistant" class="robot">
+  <p class="info">🎙️ Say: "start camera", "take picture", or "stop camera"</p>
+
+  <video id="video" autoplay muted playsinline></video>
+  <canvas id="canvas"></canvas>
+
+  <script>
+    const video = document.getElementById('video');
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    let stream = null;
+
+    // Voice recognition setup
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+    if (!SpeechRecognition) {
+      alert("Sorry, your browser does not support Speech Recognition.");
+    } else {
+      const recognition = new SpeechRecognition();
+      recognition.continuous = true;
+      recognition.lang = 'en-US';
+      recognition.interimResults = false;
+
+      recognition.onresult = (event) => {
+        const last = event.results.length - 1;
+        const command = event.results[last][0].transcript.trim().toLowerCase();
+        console.log("Voice command:", command);
+
+        if (command.includes("start camera")) {
+          startCamera();
+        } else if (command.includes("stop camera")) {
+          stopCamera();
+        } else if (command.includes("take picture")) {
+          takePicture();
+        }
+      };
+
+      recognition.onerror = (e) => {
+        console.error("Speech recognition error:", e);
+      };
+
+      recognition.start();
+    }
+
+    async function startCamera() {
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({ video: true });
+        video.srcObject = stream;
+        video.style.display = "block";
+        canvas.style.display = "none";
+      } catch (error) {
+        alert("Camera access denied or not supported.");
+        console.error(error);
+      }
+    }
+
+    function stopCamera() {
+      if (stream) {
+        stream.getTracks().forEach(track => track.stop());
+        stream = null;
+        video.style.display = "none";
+      }
+    }
+
+    function takePicture() {
+      if (!stream) return;
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      ctx.drawImage(video, 0, 0);
+      canvas.style.display = "block";
+    }
+  </script>
+  <script src="prevent.js"></script>
+</body>
+</html>
